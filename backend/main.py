@@ -14,7 +14,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_KEY")
+# Prefer environment variables, but fall back to provided key if present
+PROVIDED_FALLBACK_KEY = "AIzaSyD8G6ia9FR3QH0MIW2bKFGYzaxjFFucYD0"
+GEMINI_API_KEY = (
+    os.getenv("GEMINI_API_KEY")
+    or os.getenv("GOOGLE_API_KEY")
+    or os.getenv("GEMINI_KEY")
+    or PROVIDED_FALLBACK_KEY
+)
+
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
@@ -31,7 +39,7 @@ def hello():
 
 @app.post("/api/jarvis")
 async def jarvis_chat(req: ChatRequest):
-    if not (GEMINI_API_KEY or genai):
+    if not GEMINI_API_KEY:
         raise HTTPException(status_code=500, detail="Gemini API key is not configured on the server.")
     try:
         model = genai.GenerativeModel("gemini-1.5-flash")
@@ -79,7 +87,6 @@ def test_database():
         response["database"] = f"❌ Error: {str(e)[:50]}"
     
     # Check environment variables
-    import os
     response["database_url"] = "✅ Set" if os.getenv("DATABASE_URL") else "❌ Not Set"
     response["database_name"] = "✅ Set" if os.getenv("DATABASE_NAME") else "❌ Not Set"
     response["gemini_api_key"] = "✅ Set" if GEMINI_API_KEY else "❌ Not Set"
